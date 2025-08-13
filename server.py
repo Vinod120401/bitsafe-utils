@@ -67,12 +67,63 @@ def health_check():
 
 @app.route('/apps/<app_id>/public-key', methods=['GET'])
 def get_public_key(app_id):
-    """Get public key for an app."""
+    """Get public key for an app to be used by frontend clients."""
     try:
         public_key = middleware.get_public_key(app_id)
         return jsonify({'publicKey': public_key})
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
+
+
+@app.route('/apps/<app_id>/re-encrypt-password', methods=['POST'])
+def re_encrypt_password(app_id):
+    """
+    Re-encrypt a password that was encrypted with the app's public key
+    using the app's secret for backend communication.
+
+    This endpoint takes an encrypted password from the frontend (encrypted with
+    the app's public key) and re-encrypts it with the app's secret for secure
+    backend communication.
+
+    Expected JSON payload:
+    {
+        "encryptedPassword": "base64-encoded password encrypted with app's public key"
+    }
+
+    Returns:
+    {
+        "reEncryptedPassword": "base64-encoded password encrypted with app secret"
+    }
+    """
+    try:
+        data = request.get_json()
+
+        if not data or 'encryptedPassword' not in data:
+            return jsonify({
+                'error': 'Missing required field: encryptedPassword'
+            }), 400
+
+        encrypted_password = data['encryptedPassword']
+
+        # Get app configuration
+        app_config = middleware._get_app_config(app_id)
+
+        # Process the password: decrypt with public key and re-encrypt with app secret
+        from bitsafe_utils.crypto_service import process_password
+        re_encrypted_password = process_password(
+            encrypted_password,
+            app_config.public_key,
+            app_config.app_secret
+        )
+
+        return jsonify({
+            'reEncryptedPassword': re_encrypted_password
+        })
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': f'Failed to re-encrypt password: {str(e)}'}), 500
 
 
 @app.route('/auth/register', methods=['POST'])
