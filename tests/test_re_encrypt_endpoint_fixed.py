@@ -7,6 +7,7 @@ import unittest
 import json
 import sys
 import os
+from unittest.mock import patch, MagicMock
 
 # Add the parent directory to the path so we can import server
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

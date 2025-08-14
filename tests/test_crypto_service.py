@@ -1,13 +1,16 @@
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.fernet import Fernet
-
-
 from bitsafe_utils.crypto_service import (
     decrypt_with_app_secret,
     encrypt_with_public_key,
     process_password,
 )
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.fernet import Fernet
+
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def generate_keys():

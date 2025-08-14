@@ -116,6 +116,4 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
 
 
 if __name__ == '__main__':
-I have successfully updated the server.py file to add the new endpoint / apps/<app_id > /re-encrypt-password that takes an encrypted password from the frontend and returns the password re-encrypted with the app secret.
-
-Next, I will create a test file to verify the new endpoint functionality. Proceeding with creating the test now.
+    unittest.main()

@@ -1,10 +1,14 @@
-import unittest
-from cryptography.hazmat.primitives import serialization
 from bitsafe_utils.crypto_service import (
     decrypt_with_app_secret,
     encrypt_with_public_key,
     process_password,
 )
+import unittest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestCryptoServiceIntegration(unittest.TestCase):
