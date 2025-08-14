@@ -13,7 +13,7 @@ import os
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.fernet import Fernet
 
 
 def encrypt_with_public_key(password: str, public_key_pem: bytes) -> str:
@@ -36,7 +36,8 @@ def encrypt_with_public_key(password: str, public_key_pem: bytes) -> str:
 
 def decrypt_with_private_key(encrypted_b64: str, private_key_pem: bytes) -> str:
     """Decrypt base64 ``encrypted_b64`` using the RSA ``private_key_pem``."""
-    private_key = serialization.load_pem_private_key(private_key_pem, password=None)
+    private_key = serialization.load_pem_private_key(
+        private_key_pem, password=None)
     encrypted = base64.b64decode(encrypted_b64)
     plaintext = private_key.decrypt(
         encrypted,
@@ -49,30 +50,30 @@ def decrypt_with_private_key(encrypted_b64: str, private_key_pem: bytes) -> str:
     return plaintext.decode("utf-8")
 
 
-def _derive_aes_key(app_secret: str) -> bytes:
-    """Derive a 256-bit AES key from ``app_secret`` using SHA-256."""
-    return hashlib.sha256(app_secret.encode("utf-8")).digest()
+def _derive_fernet_key(app_secret: str) -> bytes:
+    """Derive a Fernet-compatible key from app_secret."""
+    # Fernet keys must be 32 bytes, URL-safe base64 encoded
+    key = hashlib.sha256(app_secret.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(key)
 
 
 def encrypt_with_app_secret(password: str, app_secret: str) -> str:
-    """Encrypt ``password`` using ``app_secret`` with AES-GCM.
+    """Encrypt ``password`` using ``app_secret`` with Fernet (AES-128-CBC).
 
-    Returns a base64 encoded string containing IV and ciphertext.
+    Returns a base64 encoded string containing the encrypted password.
     """
-    key = _derive_aes_key(app_secret)
-    aesgcm = AESGCM(key)
-    iv = os.urandom(12)  # AESGCM standard nonce size
-    ciphertext = aesgcm.encrypt(iv, password.encode("utf-8"), None)
-    return base64.b64encode(iv + ciphertext).decode("utf-8")
+    key = _derive_fernet_key(app_secret)
+    fernet = Fernet(key)
+    encrypted = fernet.encrypt(password.encode("utf-8"))
+    return base64.b64encode(encrypted).decode("utf-8")
 
 
 def decrypt_with_app_secret(encrypted_b64: str, app_secret: str) -> str:
     """Decrypt payload produced by :func:`encrypt_with_app_secret`."""
-    key = _derive_aes_key(app_secret)
-    aesgcm = AESGCM(key)
-    data = base64.b64decode(encrypted_b64)
-    iv, ciphertext = data[:12], data[12:]
-    plaintext = aesgcm.decrypt(iv, ciphertext, None)
+    key = _derive_fernet_key(app_secret)
+    fernet = Fernet(key)
+    encrypted = base64.b64decode(encrypted_b64)
+    plaintext = fernet.decrypt(encrypted)
     return plaintext.decode("utf-8")
 
 
