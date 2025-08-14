@@ -3,6 +3,8 @@
 This module enables a client to encrypt a password with an RSA public key
 and a wrapper service to decrypt that payload and re-encrypt it using an
 application secret before forwarding it to the Bitsafe backend.
+It also provides functions to decrypt the password using the corresponding
+private key.
 """
 
 from __future__ import annotations
@@ -37,7 +39,8 @@ def encrypt_with_public_key(password: str, public_key_pem: bytes) -> str:
 
 def decrypt_with_private_key(encrypted_b64: str, private_key_pem: bytes) -> str:
     """Decrypt base64 ``encrypted_b64`` using the RSA ``private_key_pem``."""
-    private_key = serialization.load_pem_private_key(private_key_pem, password=None)
+    private_key = serialization.load_pem_private_key(
+        private_key_pem, password=None)
 
     encrypted = base64.b64decode(encrypted_b64)
     plaintext = private_key.decrypt(
@@ -56,7 +59,11 @@ def encrypt_with_app_secret(password: str, app_secret: str) -> str:
     fernet = Fernet(app_secret.encode("utf-8"))
     token = fernet.encrypt(password.encode("utf-8"))
     return token.decode("utf-8")
-=======
+
+
+== == == =
+
+
 def _derive_fernet_key(app_secret: str) -> bytes:
     """Derive a Fernet-compatible key from app_secret."""
     # Fernet keys must be 32 bytes, URL-safe base64 encoded
@@ -73,7 +80,6 @@ def encrypt_with_app_secret(password: str, app_secret: str) -> str:
     fernet = Fernet(key)
     encrypted = fernet.encrypt(password.encode("utf-8"))
     return base64.b64encode(encrypted).decode("utf-8")
-
 
 
 def decrypt_with_app_secret(encrypted_b64: str, app_secret: str) -> str:
