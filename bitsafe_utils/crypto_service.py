@@ -1,4 +1,5 @@
-"""Cryptographic helpers for secure password handling.
+"""
+Cryptographic helpers for secure password handling.
 
 This module enables a client to encrypt a password with an RSA public key
 and a wrapper service to decrypt that payload and re-encrypt it using an
@@ -59,9 +60,6 @@ def encrypt_with_app_secret(password: str, app_secret: str) -> str:
     fernet = Fernet(app_secret.encode("utf-8"))
     token = fernet.encrypt(password.encode("utf-8"))
     return token.decode("utf-8")
-
-
-== == == =
 
 
 def _derive_fernet_key(app_secret: str) -> bytes:
