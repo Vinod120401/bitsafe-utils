@@ -1,6 +1,5 @@
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-
 from cryptography.fernet import Fernet
 
 
@@ -12,7 +11,8 @@ from bitsafe_utils.crypto_service import (
 
 
 def generate_keys():
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_key = rsa.generate_private_key(
+        public_exponent=65537, key_size=2048)
     private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
@@ -31,8 +31,8 @@ def test_process_password_round_trip():
 
     app_secret = Fernet.generate_key().decode()
 
-
     encrypted_for_wrapper = encrypt_with_public_key(password, public_pem)
-    re_encrypted = process_password(encrypted_for_wrapper, private_pem, app_secret)
+    re_encrypted = process_password(
+        encrypted_for_wrapper, private_pem, app_secret)
     decrypted = decrypt_with_app_secret(re_encrypted, app_secret)
     assert decrypted == password
