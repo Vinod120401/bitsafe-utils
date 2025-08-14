@@ -55,13 +55,6 @@ def decrypt_with_private_key(encrypted_b64: str, private_key_pem: bytes) -> str:
     return plaintext.decode("utf-8")
 
 
-def encrypt_with_app_secret(password: str, app_secret: str) -> str:
-    """Encrypt ``password`` using the Fernet ``app_secret`` key."""
-    fernet = Fernet(app_secret.encode("utf-8"))
-    token = fernet.encrypt(password.encode("utf-8"))
-    return token.decode("utf-8")
-
-
 def _derive_fernet_key(app_secret: str) -> bytes:
     """Derive a Fernet-compatible key from app_secret."""
     # Fernet keys must be 32 bytes, URL-safe base64 encoded
@@ -82,10 +75,16 @@ def encrypt_with_app_secret(password: str, app_secret: str) -> str:
 
 def decrypt_with_app_secret(encrypted_b64: str, app_secret: str) -> str:
     """Decrypt payload produced by :func:`encrypt_with_app_secret`."""
+    key = _derive_fernet_key(app_secret)
+    fernet = Fernet(key)
 
-    fernet = Fernet(app_secret.encode("utf-8"))
-    plaintext = fernet.decrypt(encrypted_b64.encode("utf-8"))
+    # Handle both base64 encoded and direct input
+    try:
+        encrypted_data = base64.b64decode(encrypted_b64)
+    except Exception:
+        encrypted_data = encrypted_b64.encode("utf-8")
 
+    plaintext = fernet.decrypt(encrypted_data)
     return plaintext.decode("utf-8")
 
 
