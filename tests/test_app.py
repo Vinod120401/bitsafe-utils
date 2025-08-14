@@ -1,14 +1,12 @@
+import os
+
+from fastapi.testclient import TestClient
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-
 from cryptography.fernet import Fernet
 
-
-from bitsafe_utils.crypto_service import (
-    decrypt_with_app_secret,
-    encrypt_with_public_key,
-    process_password,
-)
+from bitsafe_utils.app import app
+from bitsafe_utils.crypto_service import encrypt_with_public_key, decrypt_with_app_secret
 
 
 def generate_keys():
@@ -25,14 +23,17 @@ def generate_keys():
     return private_pem, public_pem
 
 
-def test_process_password_round_trip():
+def test_re_encrypt_endpoint_round_trip():
     private_pem, public_pem = generate_keys()
-    password = "Tr0ub4dor&3"
-
     app_secret = Fernet.generate_key().decode()
+    os.environ["PRIVATE_KEY"] = private_pem.decode().replace("\n", "\\n")
+    os.environ["APP_SECRET"] = app_secret
 
+    client = TestClient(app)
 
-    encrypted_for_wrapper = encrypt_with_public_key(password, public_pem)
-    re_encrypted = process_password(encrypted_for_wrapper, private_pem, app_secret)
-    decrypted = decrypt_with_app_secret(re_encrypted, app_secret)
-    assert decrypted == password
+    password = "S3cur3Pass!"
+    encrypted = encrypt_with_public_key(password, public_pem)
+    resp = client.post("/re-encrypt", json={"password": encrypted})
+    assert resp.status_code == 200
+    re_encrypted = resp.json()["password"]
+    assert decrypt_with_app_secret(re_encrypted, app_secret) == password
