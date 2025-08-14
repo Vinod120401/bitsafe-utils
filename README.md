@@ -23,7 +23,8 @@ Run the service with:
 uvicorn bitsafe_utils.app:app --host 0.0.0.0 --port 8000
 ```
 
-Use `scripts/generate_keys.py` to generate a fresh RSA key pair:
+Use `scripts/generate_keys.py` to generate a fresh RSA key pair. The script
+writes the private key with `600` permissions so it isn't world readable:
 
 ```bash
 python scripts/generate_keys.py --private ./private_key.pem --public ./public_key.pem
