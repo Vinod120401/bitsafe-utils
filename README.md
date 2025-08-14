@@ -42,3 +42,8 @@ pip install -r requirements.txt
 ```bash
 pytest
 ```
+
+### Contributing
+
+- Use descriptive commit messages that summarize your changes.
+- Ensure the test suite passes locally with `pytest` before pushing.
