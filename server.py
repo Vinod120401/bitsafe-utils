@@ -96,19 +96,33 @@ def re_encrypt_password(app_id):
     }
     """
     try:
-        data = request.get_json()
+        # Handle empty payload
+        if not request.data:
+            return jsonify({'error': 'Empty payload'}), 400
 
-        if not data or 'encryptedPassword' not in data:
-            return jsonify({
-                'error': 'Missing required field: encryptedPassword'
-            }), 400
+        # Handle invalid JSON
+        try:
+            data = request.get_json(force=True)
+        except Exception:
+            return jsonify({'error': 'Invalid JSON format'}), 400
+
+        # Handle missing or invalid data structure
+        if not isinstance(data, dict):
+            return jsonify({'error': 'Invalid payload format'}), 400
+
+        if 'encryptedPassword' not in data:
+            return jsonify({'error': 'Missing required field: encryptedPassword'}), 400
 
         encrypted_password = data['encryptedPassword']
+
+        # Validate encryptedPassword is a string
+        if not isinstance(encrypted_password, str):
+            return jsonify({'error': 'encryptedPassword must be a string'}), 400
 
         # Get app configuration
         app_config = middleware._get_app_config(app_id)
 
-        # Process the password: decrypt with public key and re-encrypt with app secret
+        # Process the password: decrypt with private key and re-encrypt with app secret
         from bitsafe_utils.crypto_service import process_password
         re_encrypted_password = process_password(
             encrypted_password,

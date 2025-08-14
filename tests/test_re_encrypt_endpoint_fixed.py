@@ -18,14 +18,15 @@ class TestReEncryptEndpoint(unittest.TestCase):
 
     def setUp(self):
         """Set up test client and mock data."""
+        app.config['TESTING'] = True
         self.app = app.test_client()
-        self.app.testing = True
 
         self.test_app_id = "test_app_123"
 
     def test_re_encrypt_password_success(self):
         """Test successful password re-encryption."""
-        with patch('server.middleware') as mock_middleware:
+        with patch('bitsafe_utils.middleware_service.BitsafeMiddleware') as mock_middleware_class:
+            mock_middleware = mock_middleware_class.return_value
             mock_app_config = MagicMock()
             mock_app_config.app_secret = "test_secret"
             mock_app_config.public_key = b"test_public_key"
