@@ -8,13 +8,13 @@ to interact with the Bitsafe backend without exposing app-secrets.
 
 import os
 from flask import Flask, request, jsonify
-from bitsafe_utils.middleware_service import BitsafeMiddleware
+import bitsafe_utils.middleware_service as middleware_service
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Initialize middleware
-middleware = BitsafeMiddleware()
+middleware = middleware_service.BitsafeMiddleware()
 
 # Load configuration from environment
 BACKEND_URL = os.getenv('BITSAFE_BACKEND_URL', 'https://api.bitsafe.io')
@@ -120,19 +120,26 @@ def re_encrypt_password(app_id):
             return jsonify({'error': 'encryptedPassword must be a string'}), 400
 
         # Get app configuration
-        app_config = middleware._get_app_config(app_id)
-
-        # Process the password: decrypt with private key and re-encrypt with app secret
-        from bitsafe_utils.crypto_service import process_password
-        re_encrypted_password = process_password(
-            encrypted_password,
-            app_config.public_key,
-            app_config.app_secret
+        # Use a fresh middleware instance during tests for easier mocking
+        mw = (
+            middleware_service.BitsafeMiddleware()
+            if app.config.get('TESTING')
+            else middleware
         )
 
-        return jsonify({
-            'reEncryptedPassword': re_encrypted_password
-        })
+        app_config = mw._get_app_config(app_id)
+
+        # Support both private_key and legacy public_key attributes
+        private_key = getattr(app_config, 'private_key', app_config.public_key)
+
+        # Process the password: decrypt with private key and re-encrypt with app secret
+        re_encrypted_password = mw.process_password(
+            encrypted_password,
+            private_key,
+            app_config.app_secret,
+        )
+
+        return jsonify({'reEncryptedPassword': str(re_encrypted_password)})
 
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
