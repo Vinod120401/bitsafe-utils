@@ -43,6 +43,24 @@ class BitsafeMiddleware:
         )
         logger.info(f"Registered app: {app_id}")
 
+    def process_password(
+        self,
+        encrypted_password: str,
+        private_key_pem: bytes,
+        app_secret: str,
+    ) -> str:
+        """Decrypt and re-encrypt ``encrypted_password`` for backend use.
+
+        Args:
+            encrypted_password: Password encrypted with the public key.
+            private_key_pem: RSA private key in PEM format.
+            app_secret: Secret used to encrypt the password for the backend.
+
+        Returns:
+            The password re-encrypted with ``app_secret``.
+        """
+        return process_password(encrypted_password, private_key_pem, app_secret)
+
     def _get_app_config(self, app_id: str) -> AppConfig:
         """Get app configuration or raise error if not found."""
         if app_id not in self.apps:
@@ -85,10 +103,10 @@ class BitsafeMiddleware:
         app_config = self._get_app_config(app_id)
 
         # Decrypt and re-encrypt password with app secret
-        password_for_backend = process_password(
+        password_for_backend = self.process_password(
             encrypted_password,
             app_config.public_key,
-            app_config.app_secret
+            app_config.app_secret,
         )
 
         payload = {
@@ -116,10 +134,10 @@ class BitsafeMiddleware:
         app_config = self._get_app_config(app_id)
 
         # Decrypt and re-encrypt password with app secret
-        password_for_backend = process_password(
+        password_for_backend = self.process_password(
             encrypted_password,
             app_config.public_key,
-            app_config.app_secret
+            app_config.app_secret,
         )
 
         payload = {

@@ -30,6 +30,19 @@ writes the private key with `600` permissions so it isn't world readable:
 python scripts/generate_keys.py --private ./private_key.pem --public ./public_key.pem
 ```
 
+## Flask Middleware Server
+
+`server.py` provides a Flask implementation suitable for multi-application
+deployments. Each request can instantiate a fresh
+`BitsafeMiddleware` when `app.config['TESTING']` is enabled, allowing the
+middleware to be easily mocked in unit tests.
+
+Run the server with:
+
+```bash
+python server.py
+```
+
 ### Development
 
 Install dependencies:
