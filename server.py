@@ -257,4 +257,8 @@ def index():
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     debug = os.getenv('DEBUG', 'false').lower() == 'true'
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    if debug:
+        app.run(host='0.0.0.0', port=port, debug=True)
+    else:
+        from waitress import serve
+        serve(app, host='0.0.0.0', port=port)

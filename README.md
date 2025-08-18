@@ -49,8 +49,10 @@ Each application is configured through environment variables. For an index
 Run the server with:
 
 ```bash
-python server.py
+python server.py  # uses Waitress in production
 ```
+
+Set `DEBUG=true` to use Flask's development server during local development.
 
 ### Development
 
