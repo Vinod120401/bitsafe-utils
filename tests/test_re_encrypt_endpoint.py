@@ -36,7 +36,7 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
             mock_middleware = mock_middleware_class.return_value
             mock_app_config = MagicMock()
             mock_app_config.app_secret = self.test_app_secret
-            mock_app_config.public_key = self.test_public_key.encode('utf-8')
+            mock_app_config.private_key = self.test_public_key.encode('utf-8')
 
             mock_middleware._get_app_config.return_value = mock_app_config
             mock_middleware.process_password = MagicMock(
@@ -89,7 +89,7 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
             mock_middleware = mock_middleware_class.return_value
             mock_app_config = MagicMock()
             mock_app_config.app_secret = "test_secret"
-            mock_app_config.public_key = b"test_public_key"
+            mock_app_config.private_key = b"test_private_key"
 
             mock_middleware._get_app_config.side_effect = ValueError(
                 "App not found")
