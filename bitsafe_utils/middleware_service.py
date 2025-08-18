@@ -24,6 +24,7 @@ class AppConfig:
     """Configuration for a registered application."""
     app_id: str
     app_secret: str
+    private_key: bytes
     public_key: bytes
 
 
@@ -34,14 +35,21 @@ class BitsafeMiddleware:
         self.backend_url = backend_url.rstrip('/')
         self.apps: Dict[str, AppConfig] = {}
 
-    def register_app(self, app_id: str, app_secret: str, public_key_pem: str):
+    def register_app(
+        self,
+        app_id: str,
+        app_secret: str,
+        private_key_pem: str,
+        public_key_pem: str,
+    ) -> None:
         """Register a new application with its configuration."""
         self.apps[app_id] = AppConfig(
             app_id=app_id,
             app_secret=app_secret,
-            public_key=public_key_pem.encode('utf-8')
+            private_key=private_key_pem.encode('utf-8'),
+            public_key=public_key_pem.encode('utf-8'),
         )
-        logger.info(f"Registered app: {app_id}")
+        logger.info("Registered app: %s", app_id)
 
     def process_password(
         self,
@@ -105,7 +113,7 @@ class BitsafeMiddleware:
         # Decrypt and re-encrypt password with app secret
         password_for_backend = self.process_password(
             encrypted_password,
-            app_config.public_key,
+            app_config.private_key,
             app_config.app_secret,
         )
 
@@ -136,7 +144,7 @@ class BitsafeMiddleware:
         # Decrypt and re-encrypt password with app secret
         password_for_backend = self.process_password(
             encrypted_password,
-            app_config.public_key,
+            app_config.private_key,
             app_config.app_secret,
         )
 
