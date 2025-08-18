@@ -29,7 +29,7 @@ class TestReEncryptEndpoint(unittest.TestCase):
             mock_middleware = mock_middleware_class.return_value
             mock_app_config = MagicMock()
             mock_app_config.app_secret = "test_secret"
-            mock_app_config.public_key = b"test_public_key"
+            mock_app_config.private_key = b"test_private_key"
 
             mock_middleware._get_app_config.return_value = mock_app_config
 

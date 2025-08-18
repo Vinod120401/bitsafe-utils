@@ -37,6 +37,15 @@ deployments. Each request can instantiate a fresh
 `BitsafeMiddleware` when `app.config['TESTING']` is enabled, allowing the
 middleware to be easily mocked in unit tests.
 
+Each application is configured through environment variables. For an index
+`i`, define the following variables:
+
+- `APP_i_ID`: Application identifier.
+- `APP_i_SECRET`: Fernet key used for backend communication.
+- `APP_i_PRIVATE_KEY_PATH`: Path to the RSA private key in PEM format.
+- `APP_i_PUBLIC_KEY_PATH`: Path to the corresponding RSA public key served to
+  clients.
+
 Run the server with:
 
 ```bash
@@ -54,7 +63,7 @@ pip install -r requirements.txt
 ### Testing
 
 ```bash
-pytest
+PYTHONPATH=. pytest
 ```
 
 ### Contributing

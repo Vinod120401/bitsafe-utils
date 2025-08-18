@@ -13,11 +13,11 @@ import bitsafe_utils.middleware_service as middleware_service
 # Initialize Flask app
 app = Flask(__name__)
 
-# Initialize middleware
-middleware = middleware_service.BitsafeMiddleware()
-
 # Load configuration from environment
-BACKEND_URL = os.getenv('BITSAFE_BACKEND_URL', 'https://api.bitsafe.io')
+BACKEND_URL = os.getenv("BITSAFE_BACKEND_URL", "https://api.bitsafe.io")
+
+# Initialize middleware
+middleware = middleware_service.BitsafeMiddleware(BACKEND_URL)
 
 # Register apps from environment variables
 
@@ -29,22 +29,25 @@ def load_apps_from_env():
     # Look for app configurations in environment
     i = 1
     while True:
-        app_id = os.getenv(f'APP_{i}_ID')
-        app_secret = os.getenv(f'APP_{i}_SECRET')
-        public_key_path = os.getenv(f'APP_{i}_PUBLIC_KEY_PATH')
+        app_id = os.getenv(f"APP_{i}_ID")
+        app_secret = os.getenv(f"APP_{i}_SECRET")
+        private_key_path = os.getenv(f"APP_{i}_PRIVATE_KEY_PATH")
+        public_key_path = os.getenv(f"APP_{i}_PUBLIC_KEY_PATH")
 
-        if not all([app_id, app_secret, public_key_path]):
+        if not all([app_id, app_secret, private_key_path, public_key_path]):
             break
 
         try:
-            with open(public_key_path, 'r') as f:
+            with open(private_key_path, "r", encoding="utf-8") as f:
+                private_key = f.read()
+            with open(public_key_path, "r", encoding="utf-8") as f:
                 public_key = f.read()
 
-            middleware.register_app(app_id, app_secret, public_key)
+            middleware.register_app(app_id, app_secret, private_key, public_key)
             app_configs.append(app_id)
 
-        except Exception as e:
-            print(f"Failed to load app {app_id}: {e}")
+        except Exception as exc:  # pragma: no cover - defensive
+            app.logger.error("Failed to load app %s: %s", app_id, exc)
 
         i += 1
 
@@ -53,7 +56,7 @@ def load_apps_from_env():
 
 # Load apps on startup
 registered_apps = load_apps_from_env()
-print(f"Registered apps: {registered_apps}")
+app.logger.info("Registered apps: %s", registered_apps)
 
 
 @app.route('/health', methods=['GET'])
@@ -123,19 +126,15 @@ def re_encrypt_password(app_id):
         # Use a fresh middleware instance during tests for easier mocking
         mw = (
             middleware_service.BitsafeMiddleware()
-            if app.config.get('TESTING')
+            if app.config.get("TESTING")
             else middleware
         )
 
         app_config = mw._get_app_config(app_id)
 
-        # Support both private_key and legacy public_key attributes
-        private_key = getattr(app_config, 'private_key', app_config.public_key)
-
-        # Process the password: decrypt with private key and re-encrypt with app secret
         re_encrypted_password = mw.process_password(
             encrypted_password,
-            private_key,
+            app_config.private_key,
             app_config.app_secret,
         )
 
