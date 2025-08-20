@@ -4,6 +4,7 @@
 - Avoid exposing secrets; load sensitive data from environment variables.
 - Run `PYTHONPATH=. pytest` before committing any changes.
 - Keep dependencies minimal and specify them in `requirements.txt`.
+- Use `requests` for HTTP client interactions; avoid adding `httpx` unless necessary.
 - API endpoints live in `bitsafe_utils.app` and use FastAPI.
 - `server.py` exposes Flask endpoints and should instantiate a new
   `BitsafeMiddleware` when `app.config['TESTING']` is true so tests can mock it.
@@ -14,5 +15,7 @@
   `APP_i_PUBLIC_KEY_PATH`.
 - Store the RSA private key as `PRIVATE_KEY` and the Fernet key as `APP_SECRET`.
 - Key generation utilities live in `scripts/generate_keys.py`; do not add duplicate key generation scripts elsewhere.
+
 - Unit tests can generate ephemeral RSA and Fernet keys via
   `tests/helpers.py::generate_test_keys`.
+
