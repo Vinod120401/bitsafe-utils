@@ -50,14 +50,6 @@ If a client requests an unregistered application, the middleware responds with a
 `404` status and a JSON body of the form
 `{"error": "App ID <app_id> not registered"}`.
 
-Run the server with:
-
-```bash
-python server.py  # uses Waitress in production
-```
-
-Set `DEBUG=true` to use Flask's development server during local development.
-
 
 ### Development
 
@@ -67,7 +59,9 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-HTTP requests are handled using the `requests` library; `httpx` is not required. Run `pip freeze` to verify `httpx` is absent.
+Environment variables can be loaded from a `.env` file using `python-dotenv`.
+HTTP requests are handled using the `requests` library. The `httpx` package is
+only required for FastAPI's test client.
 
 ### Testing
 
