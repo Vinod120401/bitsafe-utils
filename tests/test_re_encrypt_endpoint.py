@@ -1,123 +1,73 @@
-"""
-Tests for the re-encrypt password endpoint.
-"""
+"""Tests for the re-encrypt password endpoint using FastAPI."""
 
-from server import app
-import unittest
+from __future__ import annotations
+
 import json
-import sys
-import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-# Add the parent directory to the path so we can import server
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fastapi.testclient import TestClient
+
+from bitsafe_utils.app import app, middleware
 
 
-class TestReEncryptEndpoint(unittest.TestCase):
-    """Test cases for the re-encrypt password endpoint."""
+client = TestClient(app)
 
-    def setUp(self):
-        """Set up test client and mock data."""
-        app.config['TESTING'] = True
-        self.app = app.test_client()
 
-        # Mock app configuration
-        self.test_app_id = "test_app_123"
-        self.test_app_secret = "test_secret_key_12345"
-        self.test_public_key = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4f5wg5l2hKsTeNem/V41
-fGnJm6gOdrj8ym3rFkEjWT2btf7FMEo6UqFkk91zxMqAUTsXHwIFYr2wwAIuAMYi
-koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
------END PUBLIC KEY-----"""
+def test_re_encrypt_password_success() -> None:
+    """Password is re-encrypted with the app secret."""
+    app_id = "test_app_123"
+    payload = {"encryptedPassword": "encrypted_password_from_frontend"}
 
-    def test_re_encrypt_password_success(self):
-        """Test successful password re-encryption."""
-        with patch('bitsafe_utils.middleware_service.BitsafeMiddleware') as mock_middleware_class:
-            mock_middleware = mock_middleware_class.return_value
-            mock_app_config = MagicMock()
-            mock_app_config.app_secret = self.test_app_secret
-            mock_app_config.private_key = self.test_public_key.encode('utf-8')
+    mock_config = MagicMock()
+    mock_config.app_secret = "test_secret"
+    mock_config.private_key = b"test_private_key"
 
-            mock_middleware._get_app_config.return_value = mock_app_config
-            mock_middleware.process_password = MagicMock(
-                return_value="re_encrypted_password_123")
-
-            payload = {
-                'encryptedPassword': 'encrypted_password_from_frontend'
-            }
-
-            response = self.app.post(
-                f'/apps/{self.test_app_id}/re-encrypt-password',
-                data=json.dumps(payload),
-                content_type='application/json'
-            )
-
-            self.assertEqual(response.status_code, 200)
-            data = json.loads(response.data)
-            self.assertIn('reEncryptedPassword', data)
-            self.assertEqual(data['reEncryptedPassword'],
-                             're_encrypted_password_123')
-
-    def test_re_encrypt_password_missing_field(self):
-        """Test error when encryptedPassword field is missing."""
-        payload = {}
-
-        response = self.app.post(
-            f'/apps/{self.test_app_id}/re-encrypt-password',
+    with (
+        patch.object(middleware, "_get_app_config", return_value=mock_config),
+        patch.object(middleware, "process_password", return_value="re_encrypted"),
+    ):
+        resp = client.post(
+            f"/apps/{app_id}/re-encrypt-password",
             data=json.dumps(payload),
-            content_type='application/json'
+            headers={"Content-Type": "application/json"},
         )
 
-        self.assertEqual(response.status_code, 400)
-        data = json.loads(response.data)
-        self.assertIn('error', data)
-        self.assertIn('encryptedPassword', data['error'])
+    assert resp.status_code == 200
+    assert resp.json()["reEncryptedPassword"] == "re_encrypted"
 
-    def test_re_encrypt_password_invalid_json(self):
-        """Test error when invalid JSON is provided."""
-        response = self.app.post(
-            f'/apps/{self.test_app_id}/re-encrypt-password',
-            data='invalid json',
-            content_type='application/json'
+
+def test_re_encrypt_password_missing_field() -> None:
+    """Missing field returns HTTP 422."""
+    app_id = "test_app_123"
+    resp = client.post(
+        f"/apps/{app_id}/re-encrypt-password",
+        data=json.dumps({}),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 422
+
+
+def test_re_encrypt_password_app_not_found() -> None:
+    """Unknown app ID yields 404."""
+    app_id = "missing_app"
+    payload = {"encryptedPassword": "x"}
+    with patch.object(middleware, "_get_app_config", side_effect=ValueError("App not found")):
+        resp = client.post(
+            f"/apps/{app_id}/re-encrypt-password",
+            data=json.dumps(payload),
+            headers={"Content-Type": "application/json"},
         )
-
-        self.assertEqual(response.status_code, 400)
-
-    def test_re_encrypt_password_app_not_found(self):
-        """Test error when app ID is not registered."""
-        with patch('bitsafe_utils.middleware_service.BitsafeMiddleware') as mock_middleware_class:
-            mock_middleware = mock_middleware_class.return_value
-            mock_app_config = MagicMock()
-            mock_app_config.app_secret = "test_secret"
-            mock_app_config.private_key = b"test_private_key"
-
-            mock_middleware._get_app_config.side_effect = ValueError(
-                "App not found")
-
-            payload = {
-                'encryptedPassword': 'encrypted_password_from_frontend'
-            }
-
-            response = self.app.post(
-                '/apps/nonexistent_app/re-encrypt-password',
-                data=json.dumps(payload),
-                content_type='application/json'
-            )
-
-            self.assertEqual(response.status_code, 404)
-            data = json.loads(response.data)
-            self.assertIn('error', data)
-
-    def test_re_encrypt_password_empty_payload(self):
-        """Test error when payload is empty."""
-        response = self.app.post(
-            f'/apps/{self.test_app_id}/re-encrypt-password',
-            data='',
-            content_type='application/json'
-        )
-
-        self.assertEqual(response.status_code, 400)
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "App not found"
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_re_encrypt_password_invalid_json() -> None:
+    """Invalid JSON returns 422."""
+    app_id = "test_app_123"
+    resp = client.post(
+        f"/apps/{app_id}/re-encrypt-password",
+        data="not json",
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 422
+

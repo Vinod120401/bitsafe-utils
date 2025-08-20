@@ -4,11 +4,8 @@
 - Avoid exposing secrets; load sensitive data from environment variables.
 - Run `PYTHONPATH=. pytest` before committing any changes.
 - Keep dependencies minimal and specify them in `requirements.txt`.
-- API endpoints live in `bitsafe_utils.app` and use FastAPI.
-- `server.py` exposes Flask endpoints and should instantiate a new
-  `BitsafeMiddleware` when `app.config['TESTING']` is true so tests can mock it.
-- Use Waitress as the production WSGI server; only enable Flask's development
-  server when `DEBUG=true`.
+- API endpoints live in `bitsafe_utils.app` and use FastAPI served by
+  `uvicorn`.
 - Per-application configuration is loaded from environment variables
   `APP_i_ID`, `APP_i_SECRET`, `APP_i_PRIVATE_KEY_PATH`, and
   `APP_i_PUBLIC_KEY_PATH`.
