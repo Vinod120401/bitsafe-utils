@@ -17,4 +17,5 @@
 
 - Unit tests can generate ephemeral RSA and Fernet keys via
   `tests/helpers.py::generate_test_keys`.
+  Avoid adding additional key-generation helpers under `tests/`.
 
