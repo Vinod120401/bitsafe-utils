@@ -32,7 +32,7 @@ writes the private key with `600` permissions so it isn't world readable:
 python scripts/generate_keys.py --private ./private_key.pem --public ./public_key.pem
 ```
 
-For tests, import `generate_keys` from `tests/utils/keys.py` to create in-memory key pairs.
+For tests, use `generate_test_keys` from `tests/helpers.py` to create in-memory RSA and Fernet keys.
 
 
 
