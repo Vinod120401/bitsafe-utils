@@ -8,7 +8,10 @@ to interact with the Bitsafe backend without exposing app-secrets.
 
 import os
 from flask import Flask, request, jsonify
+from dotenv import load_dotenv
 import bitsafe_utils.middleware_service as middleware_service
+
+load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)

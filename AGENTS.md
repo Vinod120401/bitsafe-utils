@@ -2,6 +2,8 @@
 
 - Use Python 3.11+ with type hints and PEP 8 style.
 - Avoid exposing secrets; load sensitive data from environment variables.
+- Environment variables may be loaded from a `.env` file using `python-dotenv`;
+  call `load_dotenv()` before accessing them.
 - Run `PYTHONPATH=. pytest` before committing any changes.
 - Keep dependencies minimal and specify them in `requirements.txt`.
 - API endpoints live in `bitsafe_utils.app` and use FastAPI.
