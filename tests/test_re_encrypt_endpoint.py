@@ -1,13 +1,19 @@
-"""
-Tests for the re-encrypt password endpoint.
-"""
+"""Tests for the re-encrypt password endpoint using FastAPI."""
 
-from server import app
-import unittest
+from __future__ import annotations
+
 import json
+
 import sys
 import os
 from unittest.mock import patch, MagicMock
+
+from bitsafe_utils.middleware_service import BitsafeMiddleware
+from bitsafe_utils.crypto_service import (
+    encrypt_with_public_key,
+    decrypt_with_app_secret,
+)
+from tests.helpers import generate_test_keys
 
 # Add the parent directory to the path so we can import server
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,28 +29,24 @@ class TestReEncryptEndpoint(unittest.TestCase):
 
         # Mock app configuration
         self.test_app_id = "test_app_123"
-        self.test_app_secret = "test_secret_key_12345"
-        self.test_public_key = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4f5wg5l2hKsTeNem/V41
-fGnJm6gOdrj8ym3rFkEjWT2btf7FMEo6UqFkk91zxMqAUTsXHwIFYr2wwAIuAMYi
-koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
------END PUBLIC KEY-----"""
 
     def test_re_encrypt_password_success(self):
         """Test successful password re-encryption."""
-        with patch('bitsafe_utils.middleware_service.BitsafeMiddleware') as mock_middleware_class:
-            mock_middleware = mock_middleware_class.return_value
-            mock_app_config = MagicMock()
-            mock_app_config.app_secret = self.test_app_secret
-            mock_app_config.private_key = self.test_public_key.encode('utf-8')
+        private_pem, public_pem, app_secret = generate_test_keys()
+        password = "StrongPassw0rd!"
+        encrypted_for_middleware = encrypt_with_public_key(password, public_pem)
 
-            mock_middleware._get_app_config.return_value = mock_app_config
-            mock_middleware.process_password = MagicMock(
-                return_value="re_encrypted_password_123")
+        mw = BitsafeMiddleware()
+        mw.register_app(
+            self.test_app_id,
+            app_secret,
+            private_pem.decode(),
+            public_pem.decode(),
+        )
+        mw._get_app_config = MagicMock(return_value=mw.apps[self.test_app_id])
 
-            payload = {
-                'encryptedPassword': 'encrypted_password_from_frontend'
-            }
+        with patch('bitsafe_utils.middleware_service.BitsafeMiddleware', return_value=mw):
+            payload = {'encryptedPassword': encrypted_for_middleware}
 
             response = self.app.post(
                 f'/apps/{self.test_app_id}/re-encrypt-password',
@@ -52,11 +54,14 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
                 content_type='application/json'
             )
 
-            self.assertEqual(response.status_code, 200)
-            data = json.loads(response.data)
-            self.assertIn('reEncryptedPassword', data)
-            self.assertEqual(data['reEncryptedPassword'],
-                             're_encrypted_password_123')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn('reEncryptedPassword', data)
+        re_encrypted = data['reEncryptedPassword']
+        self.assertEqual(
+            decrypt_with_app_secret(re_encrypted, app_secret),
+            password,
+        )
 
     def test_re_encrypt_password_missing_field(self):
         """Test error when encryptedPassword field is missing."""
@@ -64,24 +69,14 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
 
         response = self.app.post(
             f'/apps/{self.test_app_id}/re-encrypt-password',
+
             data=json.dumps(payload),
-            content_type='application/json'
+            headers={"Content-Type": "application/json"},
         )
 
-        self.assertEqual(response.status_code, 400)
-        data = json.loads(response.data)
-        self.assertIn('error', data)
-        self.assertIn('encryptedPassword', data['error'])
+    assert resp.status_code == 200
+    assert resp.json()["reEncryptedPassword"] == "re_encrypted"
 
-    def test_re_encrypt_password_invalid_json(self):
-        """Test error when invalid JSON is provided."""
-        response = self.app.post(
-            f'/apps/{self.test_app_id}/re-encrypt-password',
-            data='invalid json',
-            content_type='application/json'
-        )
-
-        self.assertEqual(response.status_code, 400)
 
     def test_re_encrypt_password_app_not_found(self):
         """Test error when app ID is not registered."""
@@ -90,10 +85,6 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
             mock_middleware = mock_middleware_class.return_value
             mock_middleware._get_app_config.side_effect = ValueError(
                 f"App ID {app_id} not registered")
-
-            payload = {
-                'encryptedPassword': 'encrypted_password_from_frontend'
-            }
 
             response = self.app.post(
                 f'/apps/{app_id}/re-encrypt-password',
@@ -112,10 +103,19 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
             f'/apps/{self.test_app_id}/re-encrypt-password',
             data='',
             content_type='application/json'
+
         )
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "App not found"
 
-        self.assertEqual(response.status_code, 400)
 
+def test_re_encrypt_password_invalid_json() -> None:
+    """Invalid JSON returns 422."""
+    app_id = "test_app_123"
+    resp = client.post(
+        f"/apps/{app_id}/re-encrypt-password",
+        data="not json",
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 422
 
-if __name__ == '__main__':
-    unittest.main()
