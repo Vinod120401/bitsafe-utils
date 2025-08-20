@@ -53,6 +53,8 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+HTTP requests are handled using the `requests` library; `httpx` is not required. Run `pip freeze` to verify `httpx` is absent.
+
 ### Testing
 
 ```bash
