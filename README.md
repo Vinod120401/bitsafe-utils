@@ -54,6 +54,13 @@ python server.py  # uses Waitress in production
 
 Set `DEBUG=true` to use Flask's development server during local development.
 
+### Environment Configuration
+
+Both the FastAPI and Flask applications load environment variables from a `.env`
+file using [`python-dotenv`](https://pypi.org/project/python-dotenv/). Copy
+`.env.example` to `.env` and populate it with the required values for local
+development. Never commit real secrets to source control.
+
 ### Development
 
 Install dependencies:
