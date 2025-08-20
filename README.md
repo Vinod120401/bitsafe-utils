@@ -46,6 +46,10 @@ Each application is configured through environment variables. For an index
 - `APP_i_PUBLIC_KEY_PATH`: Path to the corresponding RSA public key served to
   clients.
 
+If a client requests an unregistered application, the middleware responds with a
+`404` status and a JSON body of the form
+`{"error": "App ID <app_id> not registered"}`.
+
 Run the server with:
 
 ```bash

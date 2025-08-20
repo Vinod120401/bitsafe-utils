@@ -85,21 +85,18 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
 
     def test_re_encrypt_password_app_not_found(self):
         """Test error when app ID is not registered."""
+        app_id = "nonexistent_app"
         with patch('bitsafe_utils.middleware_service.BitsafeMiddleware') as mock_middleware_class:
             mock_middleware = mock_middleware_class.return_value
-            mock_app_config = MagicMock()
-            mock_app_config.app_secret = "test_secret"
-            mock_app_config.private_key = b"test_private_key"
-
             mock_middleware._get_app_config.side_effect = ValueError(
-                "App not found")
+                f"App ID {app_id} not registered")
 
             payload = {
                 'encryptedPassword': 'encrypted_password_from_frontend'
             }
 
             response = self.app.post(
-                '/apps/nonexistent_app/re-encrypt-password',
+                f'/apps/{app_id}/re-encrypt-password',
                 data=json.dumps(payload),
                 content_type='application/json'
             )
@@ -107,6 +104,7 @@ koQYxAHw1JXmSRgGg7hSuMhvqwVA6+sAkNtKpmoaFa7j2d33EgI=
             self.assertEqual(response.status_code, 404)
             data = json.loads(response.data)
             self.assertIn('error', data)
+            self.assertEqual(data['error'], f"App ID {app_id} not registered")
 
     def test_re_encrypt_password_empty_payload(self):
         """Test error when payload is empty."""
