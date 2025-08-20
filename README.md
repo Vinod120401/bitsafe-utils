@@ -72,6 +72,8 @@ PYTHONPATH=. pytest
 
 Test utilities in `tests/helpers.py` provide `generate_test_keys` to create
 temporary RSA and Fernet keys for unit tests.
+When using FastAPI's test client, pass raw string payloads via the `content`
+parameter instead of `data` to avoid HTTPX deprecation warnings.
 
 ### Contributing
 

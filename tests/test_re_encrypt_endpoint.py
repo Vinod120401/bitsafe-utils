@@ -72,7 +72,7 @@ def test_re_encrypt_password_invalid_json() -> None:
 
     resp = client.post(
         f"/apps/{app_id}/re-encrypt-password",
-        data="not json",
+        content="not json",
         headers={"Content-Type": "application/json"},
     )
     assert resp.status_code == 422

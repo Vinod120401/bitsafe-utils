@@ -6,6 +6,8 @@
 - Run `PYTHONPATH=. pytest` before committing any changes.
 - Keep dependencies minimal and specify them in `requirements.txt`.
 - Use `requests` for HTTP client interactions; avoid adding `httpx` unless necessary.
+- When using FastAPI's test client, provide raw string payloads via `content`
+  rather than `data` to prevent HTTPX deprecation warnings.
 - API endpoints live in `bitsafe_utils.app` and use FastAPI.
 - Initialize FastAPI apps with lifespan events instead of `@app.on_event`.
 - Per-application configuration is loaded from environment variables
