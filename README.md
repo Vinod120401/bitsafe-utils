@@ -63,6 +63,9 @@ HTTP requests are handled using the `requests` library; `httpx` is not required.
 PYTHONPATH=. pytest
 ```
 
+Test utilities in `tests/helpers.py` provide `generate_test_keys` to create
+temporary RSA and Fernet keys for unit tests.
+
 ### Contributing
 
 - Use descriptive commit messages that summarize your changes.
