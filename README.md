@@ -12,7 +12,8 @@ password in plaintext.
 
 `bitsafe_utils.app` exposes a FastAPI application with endpoints for password
 re-encryption and proxying authentication requests to the Bitsafe backend. The
-`/re-encrypt` endpoint accepts an RSA-encrypted password and returns it
+application loads configured apps during startup using FastAPI lifespan events.
+The `/re-encrypt` endpoint accepts an RSA-encrypted password and returns it
 encrypted with the app secret. The endpoint expects the following environment
 variables:
 
