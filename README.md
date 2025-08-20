@@ -10,9 +10,11 @@ to the Bitsafe backend using the Fernet algorithm. This keeps the application
 secret outside of the frontend while ensuring the backend never sees the
 password in plaintext.
 
-`bitsafe_utils.app` exposes a FastAPI endpoint `/re-encrypt` that accepts an
-RSA-encrypted password and returns it encrypted with the app secret. The
-endpoint expects the following environment variables:
+`bitsafe_utils.app` exposes a FastAPI application with endpoints for password
+re-encryption and proxying authentication requests to the Bitsafe backend. The
+`/re-encrypt` endpoint accepts an RSA-encrypted password and returns it
+encrypted with the app secret. The endpoint expects the following environment
+variables:
 
 - `PRIVATE_KEY`: RSA private key in PEM format (newlines encoded as `\n`).
 - `APP_SECRET`: Fernet key used to encrypt the password for the Bitsafe API.
@@ -32,15 +34,10 @@ python scripts/generate_keys.py --private ./private_key.pem --public ./public_ke
 
 For tests, import `generate_keys` from `tests/utils/keys.py` to create in-memory key pairs.
 
-## Flask Middleware Server
 
-`server.py` provides a Flask implementation suitable for multi-application
-deployments. Each request can instantiate a fresh
-`BitsafeMiddleware` when `app.config['TESTING']` is enabled, allowing the
-middleware to be easily mocked in unit tests.
 
-Each application is configured through environment variables. For an index
-`i`, define the following variables:
+Applications are configured through environment variables. For an index `i`,
+define the following variables:
 
 - `APP_i_ID`: Application identifier.
 - `APP_i_SECRET`: Fernet key used for backend communication.
@@ -48,13 +45,7 @@ Each application is configured through environment variables. For an index
 - `APP_i_PUBLIC_KEY_PATH`: Path to the corresponding RSA public key served to
   clients.
 
-Run the server with:
-
-```bash
-python server.py  # uses Waitress in production
-```
-
-Set `DEBUG=true` to use Flask's development server during local development.
+These values are loaded on startup by `bitsafe_utils.app`.
 
 ### Development
 
@@ -63,6 +54,8 @@ Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+
+HTTP requests are handled using the `requests` library; `httpx` is not required. Run `pip freeze` to verify `httpx` is absent.
 
 ### Testing
 
