@@ -15,3 +15,4 @@
   `APP_i_PUBLIC_KEY_PATH`.
 - Store the RSA private key as `PRIVATE_KEY` and the Fernet key as `APP_SECRET`.
 - Key generation utilities live in `scripts/generate_keys.py`; do not add duplicate key generation scripts elsewhere.
+- Tests should import `generate_keys` from `tests/utils/keys.py` for RSA key generation.

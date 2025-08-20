@@ -32,7 +32,9 @@ writes the private key with `600` permissions so it isn't world readable:
 python scripts/generate_keys.py --private ./private_key.pem --public ./public_key.pem
 ```
 
-## Multi-application Configuration
+For tests, import `generate_keys` from `tests/utils/keys.py` to create in-memory key pairs.
+
+
 
 Applications are configured through environment variables. For an index `i`,
 define the following variables:
