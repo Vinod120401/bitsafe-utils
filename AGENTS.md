@@ -7,6 +7,7 @@
 - Keep dependencies minimal and specify them in `requirements.txt`.
 - Use `requests` for HTTP client interactions; avoid adding `httpx` unless necessary.
 - API endpoints live in `bitsafe_utils.app` and use FastAPI.
+- Initialize FastAPI apps with lifespan events instead of `@app.on_event`.
 - Per-application configuration is loaded from environment variables
   `APP_i_ID`, `APP_i_SECRET`, `APP_i_PRIVATE_KEY_PATH`, and
   `APP_i_PUBLIC_KEY_PATH`.

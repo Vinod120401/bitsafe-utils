@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
@@ -13,8 +14,6 @@ from . import middleware_service
 from .crypto_service import process_password
 
 logger = logging.getLogger(__name__)
-
-app = FastAPI()
 
 
 # ---------------------------------------------------------------------------
@@ -49,9 +48,14 @@ def load_apps_from_env() -> list[str]:
     return app_configs
 
 
-@app.on_event("startup")
-def startup() -> None:  # pragma: no cover - FastAPI startup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load apps at startup using FastAPI's lifespan events."""
     load_apps_from_env()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 # ---------------------------------------------------------------------------
