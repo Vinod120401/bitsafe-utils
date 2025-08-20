@@ -78,26 +78,32 @@ class TestReEncryptEndpoint(unittest.TestCase):
     assert resp.json()["reEncryptedPassword"] == "re_encrypted"
 
 
-def test_re_encrypt_password_missing_field() -> None:
-    """Missing field returns HTTP 422."""
-    app_id = "test_app_123"
-    resp = client.post(
-        f"/apps/{app_id}/re-encrypt-password",
-        data=json.dumps({}),
-        headers={"Content-Type": "application/json"},
-    )
-    assert resp.status_code == 422
+    def test_re_encrypt_password_app_not_found(self):
+        """Test error when app ID is not registered."""
+        app_id = "nonexistent_app"
+        with patch('bitsafe_utils.middleware_service.BitsafeMiddleware') as mock_middleware_class:
+            mock_middleware = mock_middleware_class.return_value
+            mock_middleware._get_app_config.side_effect = ValueError(
+                f"App ID {app_id} not registered")
 
+            response = self.app.post(
+                f'/apps/{app_id}/re-encrypt-password',
+                data=json.dumps(payload),
+                content_type='application/json'
+            )
 
-def test_re_encrypt_password_app_not_found() -> None:
-    """Unknown app ID yields 404."""
-    app_id = "missing_app"
-    payload = {"encryptedPassword": "x"}
-    with patch.object(middleware, "_get_app_config", side_effect=ValueError("App not found")):
-        resp = client.post(
-            f"/apps/{app_id}/re-encrypt-password",
-            data=json.dumps(payload),
-            headers={"Content-Type": "application/json"},
+            self.assertEqual(response.status_code, 404)
+            data = json.loads(response.data)
+            self.assertIn('error', data)
+            self.assertEqual(data['error'], f"App ID {app_id} not registered")
+
+    def test_re_encrypt_password_empty_payload(self):
+        """Test error when payload is empty."""
+        response = self.app.post(
+            f'/apps/{self.test_app_id}/re-encrypt-password',
+            data='',
+            content_type='application/json'
+
         )
     assert resp.status_code == 404
     assert resp.json()["detail"] == "App not found"
