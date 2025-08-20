@@ -4,6 +4,7 @@
 - Avoid exposing secrets; load sensitive data from environment variables.
 - Run `PYTHONPATH=. pytest` before committing any changes.
 - Keep dependencies minimal and specify them in `requirements.txt`.
+- Use `requests` for HTTP client interactions; avoid adding `httpx` unless necessary.
 - API endpoints live in `bitsafe_utils.app` and use FastAPI.
 - `server.py` exposes Flask endpoints and should instantiate a new
   `BitsafeMiddleware` when `app.config['TESTING']` is true so tests can mock it.
